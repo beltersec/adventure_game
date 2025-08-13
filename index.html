@@ -3,43 +3,40 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>Choose Your Own Adventure — Minimal PyScript (Strict Fix)</title>
-  <!-- ✅ Correct PyScript CDN for 2024.5.1 -->
+  <title>Adventure Game — DOM Fix</title>
   <link rel="stylesheet" href="https://pyscript.net/releases/2024.5.1/core.css">
   <script type="module" src="https://pyscript.net/releases/2024.5.1/core.js"></script>
   <style>
     body { background:#000; color:#0f0; font-family:'Courier New', monospace; padding:20px; }
+    .wrap { max-width:860px; margin:0 auto; }
     h1 { text-align:center; text-shadow:0 0 10px #0f0; }
-    .wrap { max-width:840px; margin:0 auto; }
     #output { width:100%; height:360px; background:#000; color:#0f0; border:2px solid #0f0; padding:10px; resize:none; display:block; }
     #row { display:flex; gap:10px; margin-top:12px; }
     #player-input { flex:1; background:#000; color:#0f0; border:2px solid #0f0; padding:8px; }
-    #submit-btn { background:#000; color:#0f0; border:2px solid #0f0; padding:8px 15px; cursor:pointer; }
-    #submit-btn:hover { background:#0f0; color:#000; }
+    button { background:#000; color:#0f0; border:2px solid #0f0; padding:8px 14px; cursor:pointer; }
+    button:hover { background:#0f0; color:#000; }
     .hint { opacity:0.8; font-size:12px; margin-top:6px; }
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>Choose Your Own Adventure</h1>
-
-    <!-- ✅ These elements must exist and have these IDs -->
     <textarea id="output" readonly></textarea>
     <div id="row">
       <input id="player-input" type="text" placeholder="Type here and press Enter">
-      <!-- ✅ Use py-click, NOT pys-onClick -->
       <button id="submit-btn" py-click="process_choice()">Submit</button>
+      <button id="reset-btn" py-click="reset_game()">Reset</button>
     </div>
-    <div class="hint">If nothing appears after a few seconds, refresh once. Use modern Chrome/Edge/Firefox.</div>
+    <div class="hint">DOM-based build (no Element import). If it ever stalls, hard refresh.</div>
 
-    <!-- Minimal config in JSON form -->
     <py-config>
       { "packages": [] }
     </py-config>
 
     <py-script>
-from pyscript import Element
+from js import document
 
+# ---- Game state ----
 fail = ("The adventurer's life is not for the faint hearted, you turn and walk home, "
         "head hung low, tail between your legs. Defeated, maybe knitting is a more appropriate hobby")
 
@@ -47,21 +44,33 @@ stage = 0
 name = ""
 route_L = False
 
-out = Element("output")
-inp = Element("player-input")
+def _out():
+    return document.getElementById("output")
+
+def _inp():
+    return document.getElementById("player-input")
 
 def println(text=""):
-    current = out.element.value
-    out.element.value = (current + ("" if current.endswith("\\n") or current == "" else "\\n") + text + "\\n")
-    out.element.scrollTop = out.element.scrollHeight
+    out = _out()
+    cur = out.value
+    if not cur.endswith("\\n") and cur != "":
+        cur += "\\n"
+    out.value = cur + text + "\\n"
+    out.scrollTop = out.scrollHeight
 
 def prompt(text):
     println(text)
 
+def reset_game(event=None):
+    global stage, name, route_L
+    _out().value = ""
+    stage = 0; name = ""; route_L = False
+    prompt("Hello traveller, what is your name?")
+
 def process_choice(event=None):
     global stage, name, route_L
-    choice = (inp.element.value or "").strip().lower()
-    inp.element.value = ""
+    choice = (_inp().value or "").strip().lower()
+    _inp().value = ""
 
     if stage == 0:
         name = choice if choice else "traveller"
@@ -141,7 +150,7 @@ def process_choice(event=None):
         return
 
 # Kick off
-prompt("Hello traveller, what is your name?")
+reset_game()
     </py-script>
   </div>
 
