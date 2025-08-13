@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>PyScript Sanity Check</title>
+  <link rel="stylesheet" href="https://pyscript.net/releases/2024.5.1/core.css">
+  <script type="module" src="https://pyscript.net/releases/2024.5.1/core.js"></script>
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; padding: 2rem; }
+    .ok { padding: 1rem; border: 1px solid #1a7f37; background:#e6ffed; color:#1a7f37; }
+    pre { background:#111; color:#0f0; padding:1rem; overflow:auto; }
+  </style>
+</head>
+<body>
+  <h1>PyScript Sanity Check</h1>
+  <p>If PyScript loads correctly, you'll see a green box below.</p>
+
+  <py-script>
+from sys import version as pyver
+from js import document
+box = document.createElement("div")
+box.className = "ok"
+box.textContent = "✅ PyScript is working! Python version: " + pyver
+document.body.appendChild(box)
+  </py-script>
+
+  <p>If you only see the Python code as plain text above, PyScript did not load.</p>
+</body>
+</html>
