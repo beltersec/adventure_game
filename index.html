@@ -3,19 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>Adventure Game — DOM Fix</title>
+  <title>Adventure Game — Retro + Typewriter</title>
   <link rel="stylesheet" href="https://pyscript.net/releases/2024.5.1/core.css">
   <script type="module" src="https://pyscript.net/releases/2024.5.1/core.js"></script>
   <style>
-    body { background:#000; color:#0f0; font-family:'Courier New', monospace; padding:20px; }
+    :root { --crt:#0f0; }
+    html,body { height:100%; }
+    body { background:#000; color:var(--crt); font-family:'Courier New', monospace; padding:20px; }
     .wrap { max-width:860px; margin:0 auto; }
-    h1 { text-align:center; text-shadow:0 0 10px #0f0; }
-    #output { width:100%; height:360px; background:#000; color:#0f0; border:2px solid #0f0; padding:10px; resize:none; display:block; }
+    h1 { text-align:center; text-shadow:0 0 10px var(--crt); margin-bottom:14px; }
+    #output { width:100%; height:360px; background:#000; color:var(--crt); border:2px solid var(--crt); padding:10px; resize:none; display:block; box-shadow:0 0 20px rgba(0,255,0,0.25) inset; }
     #row { display:flex; gap:10px; margin-top:12px; }
-    #player-input { flex:1; background:#000; color:#0f0; border:2px solid #0f0; padding:8px; }
-    button { background:#000; color:#0f0; border:2px solid #0f0; padding:8px 14px; cursor:pointer; }
-    button:hover { background:#0f0; color:#000; }
+    #player-input { flex:1; background:#000; color:var(--crt); border:2px solid var(--crt); padding:8px; }
+    button { background:#000; color:var(--crt); border:2px solid var(--crt); padding:8px 14px; cursor:pointer; }
+    button:hover { background:var(--crt); color:#000; }
     .hint { opacity:0.8; font-size:12px; margin-top:6px; }
+    .dim { opacity:0.5; }
   </style>
 </head>
 <body>
@@ -24,10 +27,10 @@
     <textarea id="output" readonly></textarea>
     <div id="row">
       <input id="player-input" type="text" placeholder="Type here and press Enter">
-      <button id="submit-btn" py-click="process_choice()">Submit</button>
+      <button id="submit-btn" py-click="on_submit()">Submit</button>
       <button id="reset-btn" py-click="reset_game()">Reset</button>
     </div>
-    <div class="hint">DOM-based build (no Element import). If it ever stalls, hard refresh.</div>
+    <div class="hint">Retro build with typewriter effect. If it stalls, hit Reset or refresh.</div>
 
     <py-config>
       { "packages": [] }
@@ -35,6 +38,56 @@
 
     <py-script>
 from js import document
+import asyncio
+
+# ---- UI helpers ----
+def out_el(): return document.getElementById("output")
+def in_el(): return document.getElementById("player-input")
+def btn_el(): return document.getElementById("submit-btn")
+
+typing = False
+
+async def typewriter(text, delay=0.02):
+    """Print text with a typewriter effect; disable input while typing."""
+    global typing
+    typing = True
+    input_box = in_el()
+    submit = btn_el()
+    if input_box: input_box.disabled = True
+    if submit:
+        submit.disabled = True
+        submit.classList.add("dim")
+
+    ta = out_el()
+    cur = ta.value
+    if not cur.endswith("\n") and cur != "":
+        cur += "\n"
+    # stream characters
+    for ch in text:
+        cur += ch
+        ta.value = cur
+        ta.scrollTop = ta.scrollHeight
+        await asyncio.sleep(delay)
+    ta.value = cur + "\n"
+    ta.scrollTop = ta.scrollHeight
+
+    if input_box: input_box.disabled = False
+    if submit:
+        submit.disabled = False
+        submit.classList.remove("dim")
+    typing = False
+
+def println(text=""):
+    ta = out_el()
+    cur = ta.value
+    if not cur.endswith("\n") and cur != "":
+        cur += "\n"
+    ta.value = cur + text + "\n"
+    ta.scrollTop = ta.scrollHeight
+
+def prompt(text):
+    # use typewriter for nicer feel
+    return asyncio.ensure_future(typewriter(text))
 
 # ---- Game state ----
 fail = ("The adventurer's life is not for the faint hearted, you turn and walk home, "
@@ -44,113 +97,104 @@ stage = 0
 name = ""
 route_L = False
 
-def _out():
-    return document.getElementById("output")
-
-def _inp():
-    return document.getElementById("player-input")
-
-def println(text=""):
-    out = _out()
-    cur = out.value
-    if not cur.endswith("\\n") and cur != "":
-        cur += "\\n"
-    out.value = cur + text + "\\n"
-    out.scrollTop = out.scrollHeight
-
-def prompt(text):
-    println(text)
-
 def reset_game(event=None):
     global stage, name, route_L
-    _out().value = ""
+    out_el().value = ""
     stage = 0; name = ""; route_L = False
     prompt("Hello traveller, what is your name?")
 
-def process_choice(event=None):
+async def process_choice():
     global stage, name, route_L
-    choice = (_inp().value or "").strip().lower()
-    _inp().value = ""
+    choice = (in_el().value or "").strip().lower()
+    in_el().value = ""
+    if choice == "":  # ignore empty submits
+        return
 
     if stage == 0:
         name = choice if choice else "traveller"
-        prompt(f"Welcome {name}, do you wish to begin the journey? (yes/no)")
+        await typewriter(f"Welcome {name}, do you wish to begin the journey? (yes/no)")
         stage = 1
         return
 
     if stage == 1:
         if choice in ("no", "n"):
-            prompt(fail)
+            await typewriter(fail)
             stage = -1
             return
-        prompt("So, the journey begins...")
-        prompt("You are alone in a dark woods, the path begins to branch...")
-        prompt("Left or Right?")
+        await typewriter("So, the journey begins...")
+        await typewriter("You are alone in a dark woods, the path begins to branch...")
+        await typewriter("Left or Right?")
         stage = 2
         return
 
     if stage == 2:
         if choice in ("left", "l"):
             route_L = True
-            prompt("You stray left, the path darkens... continue? (yes/no)")
+            await typewriter("You stray left, the path darkens... continue? (yes/no)")
         else:
             route_L = False
-            prompt("Right!... you see a light in the distance...continue? (yes/no)")
+            await typewriter("Right!... you see a light in the distance... continue? (yes/no)")
         stage = 3
         return
 
     if stage == 3:
         if choice in ("yes", "y"):
             if route_L:
-                prompt("A brave soul emerges, you continue on the path, the trees thicken the darkness grows, an owl hoots, and you hear footsteps in the bushes...")
-                prompt("Do you approach? (yes/no)")
+                await typewriter("A brave soul emerges, you continue on the path, the trees thicken the darkness grows, an owl hoots, and you hear footsteps in the bushes...")
+                await typewriter("Do you approach? (yes/no)")
             else:
-                prompt("You walk towards the light, an opening a rickety old rope bridge crosses a high chasm, a stunning palace in the distance, do you cross? (yes/no)")
+                await typewriter("You walk towards the light, an opening a rickety old rope bridge crosses a high chasm, a stunning palace in the distance, do you cross? (yes/no)")
             stage = 4
             return
-        prompt(fail)
+        await typewriter(fail)
         stage = -1
         return
 
     if stage == 4:
         if route_L and choice in ("yes", "y"):
-            prompt("You bravely step forward, the footsteps stop suddenly, a shadow in the darkness, a figure steps forward, a hunter, a bow slung over his shoulder, he smiles and offers you a hand, you have made a friend in the woods.")
-            prompt("He asks your name, do you tell him? (yes/no)")
+            await typewriter("You bravely step forward, the footsteps stop suddenly, a shadow in the darkness, a figure steps forward, a hunter, a bow slung over his shoulder, he smiles and offers you a hand, you have made a friend in the woods.")
+            await typewriter("He asks your name, do you tell him? (yes/no)")
             stage = 5
             return
         if (not route_L) and choice in ("yes", "y"):
-            prompt("You step forward, the bridge creaks under your weight, it sways in the wind, you take another step, the wooden beam shatters and falls away below, you grab the decaying ropes and save yourself,your heart skips a beat, determinded you walk on")
-            prompt("But your decision was hasty, some might say foolish, the bridge crumbles. You fall. You are lost to the chasm below. You die.")
-            prompt("GAME OVER")
+            await typewriter("You step forward, the bridge creaks under your weight, it sways in the wind, you take another step, the wooden beam shatters and falls away below, you grab the decaying ropes and save yourself,your heart skips a beat, determinded you walk on")
+            await typewriter("But your decision was hasty, some might say foolish, the bridge crumbles. You fall. You are lost to the chasm below. You die.")
+            await typewriter("GAME OVER")
             stage = -1
             return
-        prompt(fail)
+        await typewriter(fail)
         stage = -1
         return
 
     if stage == 5:
         if choice in ("yes", "y"):
-            prompt(f"He responds, 'Ah! {name}, your name is well known in these parts, you are a living legend the great adventurer, I am honoured if we could travel together what do you say?' (yes/no)")
+            await typewriter(f"He responds, 'Ah! {name}, your name is well known in these parts, you are a living legend the great adventurer, I am honoured if we could travel together what do you say?' (yes/no)")
             stage = 6
             return
-        prompt("Bewildered by your silence, the hunter eyes you with suspicion, he draws his bow, you cower in fear but he is fast and before you know it you have become the hunted, slung over his shoulder, his bow and your corpse. A fine feast they shall have tonight. You are dead.")
-        prompt("GAME OVER")
+        await typewriter("Bewildered by your silence, the hunter eyes you with suspicion, he draws his bow, you cower in fear but he is fast and before you know it you have become the hunted, slung over his shoulder, his bow and your corpse. A fine feast they shall have tonight. You are dead.")
+        await typewriter("GAME OVER")
         stage = -1
         return
 
     if stage == 6:
         if choice in ("yes", "y"):
-            prompt("You have made a friend, the hunter and you travel together, you share stories of your adventures, he teaches you how to hunt, you become a great team, the woods are no longer dark and scary but a place of adventure and friendship. You live happily ever after.")
-            prompt(f"Congratulations {name}, you have completed the adventure!")
+            await typewriter("You have made a friend, the hunter and you travel together, you share stories of your adventures, he teaches you how to hunt, you become a great team, the woods are no longer dark and scary but a place of adventure and friendship. You live happily ever after.")
+            await typewriter(f"Congratulations {name}, you have completed the adventure!")
             stage = -1
             return
-        prompt("Bewildered by your refusal, the hunter eyes you with suspicion, he draws his bow, you cower in fear but he is fast and before you know it you have become the hunted, slung over his shoulder, his bow and your corpse. A fine feast they shall have tonight. You are dead.")
-        prompt("GAME OVER")
+        await typewriter("Bewildered by your refusal, the hunter eyes you with suspicion, he draws his bow, you cower in fear but he is fast and before you know it you have become the hunted, slung over his shoulder, his bow and your corpse. A fine feast they shall have tonight. You are dead.")
+        await typewriter("GAME OVER")
         stage = -1
         return
 
+def on_submit(event=None):
+    # prevent re-entrancy while typing
+    if typing: 
+        return
+    asyncio.ensure_future(process_choice())
+
 # Kick off
-reset_game()
+asyncio.ensure_future(typewriter("Hello traveller, what is your name?"))
     </py-script>
   </div>
 
