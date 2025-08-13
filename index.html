@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>Adventure Game — Retro + Typewriter</title>
+  <title>Adventure Game — Robust Bind</title>
   <link rel="stylesheet" href="https://pyscript.net/releases/2024.5.1/core.css">
   <script type="module" src="https://pyscript.net/releases/2024.5.1/core.js"></script>
   <style>
@@ -27,10 +27,10 @@
     <textarea id="output" readonly></textarea>
     <div id="row">
       <input id="player-input" type="text" placeholder="Type here and press Enter">
-      <button id="submit-btn" py-click="on_submit()">Submit</button>
-      <button id="reset-btn" py-click="reset_game()">Reset</button>
+      <button id="submit-btn">Submit</button>
+      <button id="reset-btn">Reset</button>
     </div>
-    <div class="hint">Retro build with typewriter effect. If it stalls, hit Reset or refresh.</div>
+    <div class="hint">This build avoids py-click and binds events from Python for maximum compatibility.</div>
 
     <py-config>
       { "packages": [] }
@@ -38,21 +38,21 @@
 
     <py-script>
 from js import document
+from pyodide.ffi import create_proxy
 import asyncio
 
-# ---- UI helpers ----
 def out_el(): return document.getElementById("output")
 def in_el(): return document.getElementById("player-input")
-def btn_el(): return document.getElementById("submit-btn")
+def submit_el(): return document.getElementById("submit-btn")
+def reset_el(): return document.getElementById("reset-btn")
 
 typing = False
 
 async def typewriter(text, delay=0.02):
-    """Print text with a typewriter effect; disable input while typing."""
     global typing
     typing = True
     input_box = in_el()
-    submit = btn_el()
+    submit = submit_el()
     if input_box: input_box.disabled = True
     if submit:
         submit.disabled = True
@@ -62,7 +62,6 @@ async def typewriter(text, delay=0.02):
     cur = ta.value
     if not cur.endswith("\n") and cur != "":
         cur += "\n"
-    # stream characters
     for ch in text:
         cur += ch
         ta.value = cur
@@ -77,19 +76,9 @@ async def typewriter(text, delay=0.02):
         submit.classList.remove("dim")
     typing = False
 
-def println(text=""):
-    ta = out_el()
-    cur = ta.value
-    if not cur.endswith("\n") and cur != "":
-        cur += "\n"
-    ta.value = cur + text + "\n"
-    ta.scrollTop = ta.scrollHeight
-
 def prompt(text):
-    # use typewriter for nicer feel
     return asyncio.ensure_future(typewriter(text))
 
-# ---- Game state ----
 fail = ("The adventurer's life is not for the faint hearted, you turn and walk home, "
         "head hung low, tail between your legs. Defeated, maybe knitting is a more appropriate hobby")
 
@@ -103,11 +92,13 @@ def reset_game(event=None):
     stage = 0; name = ""; route_L = False
     prompt("Hello traveller, what is your name?")
 
-async def process_choice():
+async def process_choice(event=None):
     global stage, name, route_L
+    if typing:
+        return
     choice = (in_el().value or "").strip().lower()
     in_el().value = ""
-    if choice == "":  # ignore empty submits
+    if choice == "":
         return
 
     if stage == 0:
@@ -187,28 +178,21 @@ async def process_choice():
         stage = -1
         return
 
-def on_submit(event=None):
-    # prevent re-entrancy while typing
-    if typing: 
-        return
-    asyncio.ensure_future(process_choice())
+def _bind_events():
+    submit = submit_el()
+    reset = reset_el()
+    submit.addEventListener('click', create_proxy(lambda evt: asyncio.ensure_future(process_choice(evt))))
+    reset.addEventListener('click', create_proxy(lambda evt: reset_game(evt)))
+    inp = in_el()
+    if inp and submit:
+        def _on_key(e):
+            if e.key == "Enter":
+                submit.click()
+        inp.addEventListener('keydown', create_proxy(_on_key))
 
-# Kick off
+_bind_events()
 asyncio.ensure_future(typewriter("Hello traveller, what is your name?"))
     </py-script>
   </div>
-
-  <script>
-  // Allow Enter to submit
-  document.addEventListener('DOMContentLoaded', function () {
-      var input = document.getElementById('player-input');
-      var btn = document.getElementById('submit-btn');
-      if (input && btn) {
-          input.addEventListener('keydown', function (e) {
-              if (e.key === 'Enter') { btn.click(); }
-          });
-      }
-  });
-  </script>
 </body>
 </html>
