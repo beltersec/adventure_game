@@ -3,34 +3,41 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>Choose Your Own Adventure — Minimal PyScript (Fixed)</title>
+  <title>Choose Your Own Adventure — Minimal PyScript (Strict Fix)</title>
   <!-- ✅ Correct PyScript CDN for 2024.5.1 -->
   <link rel="stylesheet" href="https://pyscript.net/releases/2024.5.1/core.css">
   <script type="module" src="https://pyscript.net/releases/2024.5.1/core.js"></script>
   <style>
-    body { background:#000; color:#00ff00; font-family:'Courier New', monospace; padding:20px; }
-    h1 { text-align:center; text-shadow:0 0 10px #00ff00; }
-    #output { width:100%; height:360px; background:#000; color:#00ff00; border:2px solid #00ff00; padding:10px; resize:none; }
-    #player-input { background:#000; color:#00ff00; border:2px solid #00ff00; padding:8px; width:calc(100% - 110px); }
-    #submit-btn { background:#000; color:#00ff00; border:2px solid #00ff00; padding:8px 15px; cursor:pointer; }
-    #submit-btn:hover { background:#00ff00; color:#000; }
+    body { background:#000; color:#0f0; font-family:'Courier New', monospace; padding:20px; }
+    h1 { text-align:center; text-shadow:0 0 10px #0f0; }
+    .wrap { max-width:840px; margin:0 auto; }
+    #output { width:100%; height:360px; background:#000; color:#0f0; border:2px solid #0f0; padding:10px; resize:none; display:block; }
+    #row { display:flex; gap:10px; margin-top:12px; }
+    #player-input { flex:1; background:#000; color:#0f0; border:2px solid #0f0; padding:8px; }
+    #submit-btn { background:#000; color:#0f0; border:2px solid #0f0; padding:8px 15px; cursor:pointer; }
+    #submit-btn:hover { background:#0f0; color:#000; }
     .hint { opacity:0.8; font-size:12px; margin-top:6px; }
   </style>
 </head>
 <body>
-  <h1>Choose Your Own Adventure</h1>
-  <textarea id="output" readonly></textarea><br><br>
-  <input id="player-input" type="text" placeholder="Type here and press Enter">
-  <button id="submit-btn" pys-onClick="process_choice">Submit</button>
-  <div class="hint">If nothing appears after a few seconds, refresh once. Use modern Chrome/Edge/Firefox.</div>
+  <div class="wrap">
+    <h1>Choose Your Own Adventure</h1>
 
-  <!-- Optional config (kept minimal) -->
-  <py-config>
-    { "packages": [] }
-  </py-config>
+    <!-- ✅ These elements must exist and have these IDs -->
+    <textarea id="output" readonly></textarea>
+    <div id="row">
+      <input id="player-input" type="text" placeholder="Type here and press Enter">
+      <!-- ✅ Use py-click, NOT pys-onClick -->
+      <button id="submit-btn" py-click="process_choice()">Submit</button>
+    </div>
+    <div class="hint">If nothing appears after a few seconds, refresh once. Use modern Chrome/Edge/Firefox.</div>
 
-  <!-- Your game logic -->
-  <py-script>
+    <!-- Minimal config in JSON form -->
+    <py-config>
+      { "packages": [] }
+    </py-config>
+
+    <py-script>
 from pyscript import Element
 
 fail = ("The adventurer's life is not for the faint hearted, you turn and walk home, "
@@ -135,7 +142,8 @@ def process_choice(event=None):
 
 # Kick off
 prompt("Hello traveller, what is your name?")
-  </py-script>
+    </py-script>
+  </div>
 
   <script>
   // Allow Enter to submit
