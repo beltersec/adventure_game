@@ -1,0 +1,161 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Choose Your Own Adventure — Minimal PyScript (Strict Fix)</title>
+  <!-- ✅ Correct PyScript CDN for 2024.5.1 -->
+  <link rel="stylesheet" href="https://pyscript.net/releases/2024.5.1/core.css">
+  <script type="module" src="https://pyscript.net/releases/2024.5.1/core.js"></script>
+  <style>
+    body { background:#000; color:#0f0; font-family:'Courier New', monospace; padding:20px; }
+    h1 { text-align:center; text-shadow:0 0 10px #0f0; }
+    .wrap { max-width:840px; margin:0 auto; }
+    #output { width:100%; height:360px; background:#000; color:#0f0; border:2px solid #0f0; padding:10px; resize:none; display:block; }
+    #row { display:flex; gap:10px; margin-top:12px; }
+    #player-input { flex:1; background:#000; color:#0f0; border:2px solid #0f0; padding:8px; }
+    #submit-btn { background:#000; color:#0f0; border:2px solid #0f0; padding:8px 15px; cursor:pointer; }
+    #submit-btn:hover { background:#0f0; color:#000; }
+    .hint { opacity:0.8; font-size:12px; margin-top:6px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Choose Your Own Adventure</h1>
+
+    <!-- ✅ These elements must exist and have these IDs -->
+    <textarea id="output" readonly></textarea>
+    <div id="row">
+      <input id="player-input" type="text" placeholder="Type here and press Enter">
+      <!-- ✅ Use py-click, NOT pys-onClick -->
+      <button id="submit-btn" py-click="process_choice()">Submit</button>
+    </div>
+    <div class="hint">If nothing appears after a few seconds, refresh once. Use modern Chrome/Edge/Firefox.</div>
+
+    <!-- Minimal config in JSON form -->
+    <py-config>
+      { "packages": [] }
+    </py-config>
+
+    <py-script>
+from pyscript import Element
+
+fail = ("The adventurer's life is not for the faint hearted, you turn and walk home, "
+        "head hung low, tail between your legs. Defeated, maybe knitting is a more appropriate hobby")
+
+stage = 0
+name = ""
+route_L = False
+
+out = Element("output")
+inp = Element("player-input")
+
+def println(text=""):
+    current = out.element.value
+    out.element.value = (current + ("" if current.endswith("\\n") or current == "" else "\\n") + text + "\\n")
+    out.element.scrollTop = out.element.scrollHeight
+
+def prompt(text):
+    println(text)
+
+def process_choice(event=None):
+    global stage, name, route_L
+    choice = (inp.element.value or "").strip().lower()
+    inp.element.value = ""
+
+    if stage == 0:
+        name = choice if choice else "traveller"
+        prompt(f"Welcome {name}, do you wish to begin the journey? (yes/no)")
+        stage = 1
+        return
+
+    if stage == 1:
+        if choice in ("no", "n"):
+            prompt(fail)
+            stage = -1
+            return
+        prompt("So, the journey begins...")
+        prompt("You are alone in a dark woods, the path begins to branch...")
+        prompt("Left or Right?")
+        stage = 2
+        return
+
+    if stage == 2:
+        if choice in ("left", "l"):
+            route_L = True
+            prompt("You stray left, the path darkens... continue? (yes/no)")
+        else:
+            route_L = False
+            prompt("Right!... you see a light in the distance...continue? (yes/no)")
+        stage = 3
+        return
+
+    if stage == 3:
+        if choice in ("yes", "y"):
+            if route_L:
+                prompt("A brave soul emerges, you continue on the path, the trees thicken the darkness grows, an owl hoots, and you hear footsteps in the bushes...")
+                prompt("Do you approach? (yes/no)")
+            else:
+                prompt("You walk towards the light, an opening a rickety old rope bridge crosses a high chasm, a stunning palace in the distance, do you cross? (yes/no)")
+            stage = 4
+            return
+        prompt(fail)
+        stage = -1
+        return
+
+    if stage == 4:
+        if route_L and choice in ("yes", "y"):
+            prompt("You bravely step forward, the footsteps stop suddenly, a shadow in the darkness, a figure steps forward, a hunter, a bow slung over his shoulder, he smiles and offers you a hand, you have made a friend in the woods.")
+            prompt("He asks your name, do you tell him? (yes/no)")
+            stage = 5
+            return
+        if (not route_L) and choice in ("yes", "y"):
+            prompt("You step forward, the bridge creaks under your weight, it sways in the wind, you take another step, the wooden beam shatters and falls away below, you grab the decaying ropes and save yourself,your heart skips a beat, determinded you walk on")
+            prompt("But your decision was hasty, some might say foolish, the bridge crumbles. You fall. You are lost to the chasm below. You die.")
+            prompt("GAME OVER")
+            stage = -1
+            return
+        prompt(fail)
+        stage = -1
+        return
+
+    if stage == 5:
+        if choice in ("yes", "y"):
+            prompt(f"He responds, 'Ah! {name}, your name is well known in these parts, you are a living legend the great adventurer, I am honoured if we could travel together what do you say?' (yes/no)")
+            stage = 6
+            return
+        prompt("Bewildered by your silence, the hunter eyes you with suspicion, he draws his bow, you cower in fear but he is fast and before you know it you have become the hunted, slung over his shoulder, his bow and your corpse. A fine feast they shall have tonight. You are dead.")
+        prompt("GAME OVER")
+        stage = -1
+        return
+
+    if stage == 6:
+        if choice in ("yes", "y"):
+            prompt("You have made a friend, the hunter and you travel together, you share stories of your adventures, he teaches you how to hunt, you become a great team, the woods are no longer dark and scary but a place of adventure and friendship. You live happily ever after.")
+            prompt(f"Congratulations {name}, you have completed the adventure!")
+            stage = -1
+            return
+        prompt("Bewildered by your refusal, the hunter eyes you with suspicion, he draws his bow, you cower in fear but he is fast and before you know it you have become the hunted, slung over his shoulder, his bow and your corpse. A fine feast they shall have tonight. You are dead.")
+        prompt("GAME OVER")
+        stage = -1
+        return
+
+# Kick off
+prompt("Hello traveller, what is your name?")
+    </py-script>
+  </div>
+
+  <script>
+  // Allow Enter to submit
+  document.addEventListener('DOMContentLoaded', function () {
+      var input = document.getElementById('player-input');
+      var btn = document.getElementById('submit-btn');
+      if (input && btn) {
+          input.addEventListener('keydown', function (e) {
+              if (e.key === 'Enter') { btn.click(); }
+          });
+      }
+  });
+  </script>
+</body>
+</html>
