@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Choose Your Own Adventure</title>
+    <link rel="stylesheet" href="https://pyscript.net/releases/2024.5.1/pyscript.css" />
+    <script defer src="https://pyscript.net/releases/2024.5.1/pyscript.js"></script>
+    <style>
+        body {
+            background-color: #000;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+        }
+        #output {
+            width: 100%;
+            height: 400px;
+            background-color: #000;
+            color: #00ff00;
+            border: 2px solid #00ff00;
+            padding: 10px;
+            font-size: 16px;
+            resize: none;
+            box-shadow: 0 0 20px #00ff00;
+        }
+        #player-input {
+            background-color: #000;
+            color: #00ff00;
+            border: 2px solid #00ff00;
+            padding: 8px;
+            width: calc(100% - 100px);
+            font-size: 16px;
+        }
+        #submit-btn {
+            background-color: #000;
+            color: #00ff00;
+            border: 2px solid #00ff00;
+            padding: 8px 15px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #submit-btn:hover {
+            background-color: #00ff00;
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+    <h1>Choose Your Own Adventure</h1>
+    <textarea id="output" readonly></textarea><br><br>
+    <input id="player-input" type="text" placeholder="Type your choice here">
+    <button id="submit-btn">Submit</button>
+
+    <py-script>
+from js import document
+import asyncio
+
+fail = "The adventurer's life is not for the faint hearted, you turn and walk home, head hung low, tail between your legs. Defeated, maybe knitting is a more appropriate hobby"
+
+stage = 0
+name = ""
+route_L = False
+
+async def typewriter(text, delay=0.03):
+    """Types text into the output area one character at a time."""
+    output = document.getElementById("output")
+    for char in text:
+        output.value += char
+        output.scrollTop = output.scrollHeight
+        await asyncio.sleep(delay)
+    output.value += "\n"
+    output.scrollTop = output.scrollHeight
+
+async def process_choice(event=None):
+    global stage, name, route_L
+    choice = document.getElementById("player-input").value.lower().strip()
+    document.getElementById("player-input").value = ""
+
+    if stage == 0:
+        name = choice
+        await typewriter(f"Welcome {name}, do you wish to begin the journey? (yes/no)")
+        stage = 1
+
+    elif stage == 1:
+        if choice in ("no", "n"):
+            await typewriter(fail)
+            stage = -1
+        else:
+            await typewriter("So, the journey begins...\nYou are alone in a dark woods, the path begins to branch...\nLeft or Right?")
+            stage = 2
+
+    elif stage == 2:
+        if choice in ("left", "l"):
+            route_L = True
+            await typewriter("You stray left, the path darkens... continue? (yes/no)")
+        else:
+            route_L = False
+            await typewriter("Right!... you see a light in the distance... continue? (yes/no)")
+        stage = 3
+
+    elif stage == 3:
+        if choice in ("yes", "y"):
+            if route_L:
+                await typewriter("A brave soul emerges, you continue on the path, the trees thicken, the darkness grows, an owl hoots, and you hear footsteps in the bushes... Do you approach? (yes/no)")
+            else:
+                await typewriter("You walk towards the light, an opening appears — a rickety old rope bridge crosses a high chasm, a stunning palace in the distance. Do you cross? (yes/no)")
+            stage = 4
+        else:
+            await typewriter(fail)
+            stage = -1
+
+    elif stage == 4:
+        if choice in ("yes", "y"):
+            if route_L:
+                await typewriter("You bravely step forward, the footsteps stop suddenly, a shadow in the darkness... A hunter appears, bow slung over his shoulder, he smiles and offers you a hand — you have made a friend in the woods.")
+            else:
+                await typewriter("You step forward, the bridge creaks under your weight, swaying in the wind. You take another step — a beam shatters and falls away! You grab the ropes, heart pounding, and pull yourself up, determined to walk on.")
+            stage = -1
+        else:
+            await typewriter(fail)
+            stage = -1
+
+async def start_game():
+    await typewriter("Hello traveller, what is your name?")
+
+# Submit button click
+def submit_click(event):
+    asyncio.ensure_future(process_choice())
+
+# Enter key press
+def enter_key(event):
+    if event.key == "Enter":
+        asyncio.ensure_future(process_choice())
+
+# Attach events
+document.getElementById("submit-btn").addEventListener("click", submit_click)
+document.getElementById("player-input").addEventListener("keydown", enter_key)
+
+# Start game
+asyncio.ensure_future(start_game())
+    </py-script>
+</body>
+</html>
