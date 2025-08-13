@@ -1,36 +1,37 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <title>Choose Your Own Adventure — Minimal PyScript</title>
-    <link rel="stylesheet" href="https://pyscript.net/releases/2024.5.1/pyscript.css" />
-    <script defer src="https://pyscript.net/releases/2024.5.1/pyscript.js"></script>
-    <style>
-        body { background:#000; color:#00ff00; font-family: 'Courier New', monospace; padding:20px; }
-        h1 { text-align:center; text-shadow:0 0 10px #00ff00; }
-        #output { width:100%; height:360px; background:#000; color:#00ff00; border:2px solid #00ff00; padding:10px; resize:none; }
-        #player-input { background:#000; color:#00ff00; border:2px solid #00ff00; padding:8px; width:calc(100% - 110px); }
-        #submit-btn { background:#000; color:#00ff00; border:2px solid #00ff00; padding:8px 15px; cursor:pointer; }
-        #submit-btn:hover { background:#00ff00; color:#000; }
-        .hint { opacity:0.8; font-size:12px; margin-top:6px; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Choose Your Own Adventure — Minimal PyScript (Fixed)</title>
+  <!-- ✅ Correct PyScript CDN for 2024.5.1 -->
+  <link rel="stylesheet" href="https://pyscript.net/releases/2024.5.1/core.css">
+  <script type="module" src="https://pyscript.net/releases/2024.5.1/core.js"></script>
+  <style>
+    body { background:#000; color:#00ff00; font-family:'Courier New', monospace; padding:20px; }
+    h1 { text-align:center; text-shadow:0 0 10px #00ff00; }
+    #output { width:100%; height:360px; background:#000; color:#00ff00; border:2px solid #00ff00; padding:10px; resize:none; }
+    #player-input { background:#000; color:#00ff00; border:2px solid #00ff00; padding:8px; width:calc(100% - 110px); }
+    #submit-btn { background:#000; color:#00ff00; border:2px solid #00ff00; padding:8px 15px; cursor:pointer; }
+    #submit-btn:hover { background:#00ff00; color:#000; }
+    .hint { opacity:0.8; font-size:12px; margin-top:6px; }
+  </style>
 </head>
 <body>
-    <h1>Choose Your Own Adventure</h1>
-    <textarea id="output" readonly></textarea><br><br>
-    <input id="player-input" type="text" placeholder="Type here and press Submit">
-    <button id="submit-btn" pys-onClick="process_choice">Submit</button>
-    <div class="hint">If nothing appears after a few seconds, refresh once. Use modern Chrome/Edge/Firefox.</div>
+  <h1>Choose Your Own Adventure</h1>
+  <textarea id="output" readonly></textarea><br><br>
+  <input id="player-input" type="text" placeholder="Type here and press Enter">
+  <button id="submit-btn" pys-onClick="process_choice">Submit</button>
+  <div class="hint">If nothing appears after a few seconds, refresh once. Use modern Chrome/Edge/Firefox.</div>
 
-    <!-- No external packages needed -->
-    <py-config>
-        packages = []
-    </py-config>
+  <!-- Optional config (kept minimal) -->
+  <py-config>
+    { "packages": [] }
+  </py-config>
 
-    <py-script>
+  <!-- Your game logic -->
+  <py-script>
 from pyscript import Element
-
-# ---- Minimal, robust version (no async, no JS needed) ----
 
 fail = ("The adventurer's life is not for the faint hearted, you turn and walk home, "
         "head hung low, tail between your legs. Defeated, maybe knitting is a more appropriate hobby")
@@ -43,7 +44,6 @@ out = Element("output")
 inp = Element("player-input")
 
 def println(text=""):
-    # Append a line to the textarea
     current = out.element.value
     out.element.value = (current + ("" if current.endswith("\\n") or current == "" else "\\n") + text + "\\n")
     out.element.scrollTop = out.element.scrollHeight
@@ -135,19 +135,19 @@ def process_choice(event=None):
 
 # Kick off
 prompt("Hello traveller, what is your name?")
-    </py-script>
+  </py-script>
 
-    <script>
-    // Optional: allow pressing Enter to submit by simulating a button click
-    document.addEventListener('DOMContentLoaded', function () {
-        var input = document.getElementById('player-input');
-        var btn = document.getElementById('submit-btn');
-        if (input && btn) {
-            input.addEventListener('keydown', function (e) {
-                if (e.key === 'Enter') { btn.click(); }
-            });
-        }
-    });
-    </script>
+  <script>
+  // Allow Enter to submit
+  document.addEventListener('DOMContentLoaded', function () {
+      var input = document.getElementById('player-input');
+      var btn = document.getElementById('submit-btn');
+      if (input && btn) {
+          input.addEventListener('keydown', function (e) {
+              if (e.key === 'Enter') { btn.click(); }
+          });
+      }
+  });
+  </script>
 </body>
 </html>
